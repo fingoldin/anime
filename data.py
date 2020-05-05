@@ -10,6 +10,10 @@ users4 = pd.read_csv("clean_data/users4.csv")
 users = pd.concat([users1, users2, users3, users4],ignore_index=True)
 users_array = users.to_numpy()
 
+total_watchers = np.ceil(np.sum(users_array, axis=0) / 10.0)
+total_watchers = np.sqrt(total_watchers)
+total_watchers = np.maximum(np.ones(len(total_watchers)), total_watchers)
+
 print('Finishing Reading Users')
 
 d = {}
@@ -21,6 +25,12 @@ d['Tengen Toppa Gurren Lagann'] = 2001
 d['Kimi no Na wa'] = 32281
 d['Haikyuu!!'] = 20583
 d['Haikyuu!! Second Season'] = 28891
+d['Noragami'] = 20507
+d['Made in Abyss'] = 34599
+d['Planetus'] = 329
+d['Hunter x Hunter (2011)'] = 11061
+d['Boku no Hero Academia'] = 31964
+d['Fairy Tail'] = 6702
 
 all_anime = pd.read_csv("data/AnimeList.csv")
 
@@ -50,7 +60,14 @@ test_users = [ [
   { "anime_id": d['Haikyuu!!'], "score": 10.0 },
   { "anime_id": d['Haikyuu!! Second Season'], "score": 10.0 }
   ],
-  [{ "anime_id": 329, "score": 10.0 }]
+  [{ "anime_id": d['Planetus'], "score": 10.0 }],
+  [
+  { "anime_id": d['Noragami'], "score": 9.0 },
+  { "anime_id": d['Made in Abyss'], "score": 10.0 },
+  { "anime_id": d['Hunter x Hunter (2011)'], "score": 10.0 },
+  { "anime_id": d['Boku no Hero Academia'], "score": 10.0 },
+  { "anime_id": d['Fairy Tail'], "score": 8.0 }
+  ]
 ]
 
 # print('Beginning Scan')
@@ -76,20 +93,13 @@ def convert_test(test_user):
 
 def predict(test_user):
   anime = np.zeros(len(test_user))
-  total_watchers = np.zeros(len(test_user))
   for user in users_array:
       s = kernel(test_user, user)
       anime = anime + s * user
-      total_watchers = total_watchers + np.ceil(user/10.0)
-  # print(total_watchers)
-  total_watchers = np.sqrt(total_watchers)
-  anime = anime / np.maximum(total_watchers, np.ones(len(total_watchers)))
-  # print(anime)
+  anime = anime / total_watchers
 
   anime = (1 - np.ceil(test_user / 10.0)) * anime
-  # print(anime)
   best_anime_idx = np.argpartition(anime, -5)[-5:]
-  # print(best_anime_idx)
   best_anime = anime[best_anime_idx]
   best_anime = np.stack((best_anime.T, best_anime_idx.T)).T
   best_anime_idx = best_anime[best_anime[:,0].argsort()[::-1]][:,1].T
