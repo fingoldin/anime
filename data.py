@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from scrape import get_user_anime
 
 users = pd.read_csv("clean_data/users.csv") # each row is a user, each column is an anime (each cell contains the users score of that anime)
 users_array = users.to_numpy()
@@ -14,15 +15,16 @@ anime_id_map = {}
 for idx in range(len(anime_id_map_reverse)):
   anime_id_map[anime_id_map_reverse[idx]] = idx
 
-animes = []
-test_users = [ [
-  { "anime_id": 16498, "score": 1.0 }, # Attack on Titan
-  { "anime_id": 30276, "score": 1.0 } # One Punch Man
-],
-  [{ "anime_id": 16498, "score": 10.0 }], # Attack on Titan
-  [{ "anime_id": 30276, "score": 7.0 }] # One Punch Man
+def convert_raw(data):
+  out = []
+  for row in data:
+    if row["anime_id"] in anime_id_map_reverse:
+      out.append(row)
+  return out
 
-]
+animes = []
+usernames = ["greenmythos", "fingoldin"]
+test_users = [ convert_raw(get_user_anime(username)) for username in usernames ]
 
 for anime_id in range(len(users.columns)):
   animes.append(users[users[str(anime_id)] != 0.0])

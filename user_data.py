@@ -9,22 +9,20 @@ rel_data = rel_data[rel_data["my_score"] != 0.0]
 
 unique_users = rel_data["username"].unique()
 unique_anime = rel_data["anime_id"].unique()
-all_user_data = []
 
 anime_id_map = {}
 for idx in range(len(unique_anime)):
   anime_id_map[unique_anime[idx]] = idx
 
-for user in unique_users:
-  user_anime = rel_data[rel_data["username"] == user][["anime_id", "my_score"]]
-  user_data = pd.Series(np.zeros(len(unique_anime)))
-  # user_anime["my_score"][user_anime["my_score"] == 0.0] = 5
-  user_data[user_anime["anime_id"].apply(lambda x: anime_id_map[x])] = user_anime["my_score"]
+rel_data["amime_id"] = rel_data["anime_id"].apply(lambda x: anime_id_map[x])
 
-  all_user_data.append(user_data)
+def user_func(df):
+  out = pd.DataFrame([np.zeros(len(unique_anime))], columns=np.arange(0, len(unique_anime)))
+  out[df["anime_id"]] = df["my_score"]
+  print(out)
+  return out
 
-all_user_data = pd.DataFrame(all_user_data)
-print(all_user_data)
+all_user_data = rel_data.groupby(["username"]).apply(user_func)
 
 all_user_data.to_csv("clean_data/users.csv", index=False)
 np.savetxt("clean_data/anime_id_map_reverse.csv", unique_anime.astype(np.int), delimiter=",")
