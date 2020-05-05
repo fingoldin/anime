@@ -3,7 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-users = pd.read_csv("clean_data/users1.csv") # each row is a user, each column is an anime (each cell contains the users score of that anime)
+users1 = pd.read_csv("clean_data/users1.csv") # each row is a user, each column is an anime (each cell contains the users score of that anime)
+users2 = pd.read_csv("clean_data/users2.csv")
+users3 = pd.read_csv("clean_data/users3.csv")
+users4 = pd.read_csv("clean_data/users4.csv")
+users = pd.concat([users1, users2, users3, users4],ignore_index=True)
 users_array = users.to_numpy()
 
 print('Finishing Reading Users')
@@ -27,7 +31,8 @@ for idx in range(len(anime_id_map_reverse)):
 
 test_users = [ [
   { "anime_id": d['Shingeki no Kyojin'], "score": 8.0 },
-  { "anime_id": d['One Punch Man'], "score": 6.0 }
+  { "anime_id": d['One Punch Man'], "score": 6.0 },
+  { "anime_id": 21, "score": 8.0 }
   ],
   [{ "anime_id": d['Angel Beats!'], "score": 10.0 }],
   [{ "anime_id": d['Kimi no Na wa'], "score": 10.0 }],
@@ -58,7 +63,7 @@ print('Beginning Calculations')
 
 def kernel(user1, user2):
   product = np.ceil(user1/10.0) * np.ceil(user2/10.0)
-  dif = 3 * (user1 - user2) * product
+  dif = 2 * (user1 - user2) * product
   n = np.sum(product)
   return math.exp(-math.sqrt(np.sum(dif * dif))/n) if n != 0 else 0
 
@@ -74,13 +79,17 @@ def predict(test_user):
   total_watchers = np.zeros(len(test_user))
   for user in users_array:
       s = kernel(test_user, user)
-      anime = anime + s * (user - 5)
+      anime = anime + s * user
       total_watchers = total_watchers + np.ceil(user/10.0)
-  total_watchers = total_watchers ** 2
+  # print(total_watchers)
+  total_watchers = np.sqrt(total_watchers)
   anime = anime / np.maximum(total_watchers, np.ones(len(total_watchers)))
+  # print(anime)
 
   anime = (1 - np.ceil(test_user / 10.0)) * anime
+  # print(anime)
   best_anime_idx = np.argpartition(anime, -5)[-5:]
+  # print(best_anime_idx)
   best_anime = anime[best_anime_idx]
   best_anime = np.stack((best_anime.T, best_anime_idx.T)).T
   best_anime_idx = best_anime[best_anime[:,0].argsort()[::-1]][:,1].T
