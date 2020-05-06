@@ -4,8 +4,16 @@ import matplotlib.pyplot as plt
 import math
 from scrape import get_user_anime
 
-users = pd.read_csv("clean_data/users1.csv") # each row is a user, each column is an anime (each cell contains the users score of that anime)
+users1 = pd.read_csv("clean_data/users1.csv") # each row is a user, each column is an anime (each cell contains the users score of that anime)
+users2 = pd.read_csv("clean_data/users2.csv")
+users3 = pd.read_csv("clean_data/users3.csv")
+users4 = pd.read_csv("clean_data/users4.csv")
+users = pd.concat([users1, users2, users3, users4],ignore_index=True)
 users_array = users.to_numpy()
+
+total_watchers = np.ceil(np.sum(users_array, axis=0) / 10.0)
+total_watchers = np.sqrt(total_watchers)
+total_watchers = np.maximum(np.ones(len(total_watchers)), total_watchers)
 
 print('Finishing Reading Users')
 
@@ -18,6 +26,12 @@ d['Tengen Toppa Gurren Lagann'] = 2001
 d['Kimi no Na wa'] = 32281
 d['Haikyuu!!'] = 20583
 d['Haikyuu!! Second Season'] = 28891
+d['Noragami'] = 20507
+d['Made in Abyss'] = 34599
+d['Planetus'] = 329
+d['Hunter x Hunter (2011)'] = 11061
+d['Boku no Hero Academia'] = 31964
+d['Fairy Tail'] = 6702
 
 all_anime = pd.read_csv("data/AnimeList.csv")
 
@@ -40,7 +54,8 @@ test_users = [ convert_raw(get_user_anime(username)) for username in usernames ]
 """
 test_users = [ [
   { "anime_id": d['Shingeki no Kyojin'], "score": 8.0 },
-  { "anime_id": d['One Punch Man'], "score": 6.0 }
+  { "anime_id": d['One Punch Man'], "score": 6.0 },
+  { "anime_id": 21, "score": 8.0 }
   ],
   [{ "anime_id": d['Angel Beats!'], "score": 10.0 }],
   [{ "anime_id": d['Kimi no Na wa'], "score": 10.0 }],
@@ -58,7 +73,14 @@ test_users = [ [
   { "anime_id": d['Haikyuu!!'], "score": 10.0 },
   { "anime_id": d['Haikyuu!! Second Season'], "score": 10.0 }
   ],
-  [{ "anime_id": 329, "score": 10.0 }]
+  [{ "anime_id": d['Planetus'], "score": 10.0 }],
+  [
+  { "anime_id": d['Noragami'], "score": 9.0 },
+  { "anime_id": d['Made in Abyss'], "score": 10.0 },
+  { "anime_id": d['Hunter x Hunter (2011)'], "score": 10.0 },
+  { "anime_id": d['Boku no Hero Academia'], "score": 10.0 },
+  { "anime_id": d['Fairy Tail'], "score": 8.0 }
+  ]
 ]
 """
 # print('Beginning Scan')
@@ -71,7 +93,7 @@ print('Beginning Calculations')
 
 def kernel(user1, user2):
   product = np.ceil(user1/10.0) * np.ceil(user2/10.0)
-  dif = 3 * (user1 - user2) * product
+  dif = 2 * (user1 - user2) * product
   n = np.sum(product)
   return math.exp(-math.sqrt(np.sum(dif * dif))/n) if n != 0 else 0
 
@@ -84,7 +106,6 @@ def convert_test(test_user):
 
 def predict(test_user):
   anime = np.zeros(len(test_user))
-  total_watchers = np.zeros(len(test_user))
   for user in users_array:
       s = kernel(test_user, user)
       anime = anime + s * (user - 5)
