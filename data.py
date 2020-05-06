@@ -8,14 +8,19 @@ users1 = pd.read_csv("clean_data/users1.csv") # each row is a user, each column 
 users2 = pd.read_csv("clean_data/users2.csv")
 users3 = pd.read_csv("clean_data/users3.csv")
 users4 = pd.read_csv("clean_data/users4.csv")
+
+print('Finishing Reading Users')
+
 users = pd.concat([users1, users2, users3, users4],ignore_index=True)
 users_array = users.to_numpy()
 
+print('Concatenating Dataframes')
+
 total_watchers = np.ceil(np.sum(users_array, axis=0) / 10.0)
-total_watchers = np.sqrt(total_watchers)
+total_watchers = np.power(total_watchers,0.8)
 total_watchers = np.maximum(np.ones(len(total_watchers)), total_watchers)
 
-print('Finishing Reading Users')
+print('Finished Calculating Watch Statistics')
 
 d = {}
 d['One Punch Man'] = 30276
@@ -46,8 +51,6 @@ def convert_raw(data):
     if row["anime_id"] in anime_id_map_reverse:
       out.append(row)
   return out
-
-animes = []
 
 usernames = ["greenmythos", "fingoldin"]
 test_users = [ convert_raw(get_user_anime(username)) for username in usernames ]
@@ -83,11 +86,6 @@ test_users = [ [
   ]
 ]
 """
-# print('Beginning Scan')
-#
-# animes = []
-# for anime_id in range(len(users.columns)):
-#   animes.append(users[users[str(anime_id)] != 0.0])
 
 print('Beginning Calculations')
 
@@ -108,13 +106,11 @@ def predict(test_user):
   anime = np.zeros(len(test_user))
   for user in users_array:
       s = kernel(test_user, user)
-      anime = anime + s * (user - 5)
-      total_watchers = total_watchers + np.ceil(user/10.0)
-  total_watchers = total_watchers ** 2
-#  anime = anime / np.maximum(total_watchers, np.ones(len(total_watchers)))
+      anime = anime + s * user
+  anime = anime / total_watchers
 
   anime = (1 - np.ceil(test_user / 10.0)) * anime
-  best_anime_idx = np.argpartition(anime, -5)[-5:]
+  best_anime_idx = np.argpartition(anime, -10)[-10:]
   best_anime = anime[best_anime_idx]
   best_anime = np.stack((best_anime.T, best_anime_idx.T)).T
   best_anime_idx = best_anime[best_anime[:,0].argsort()[::-1]][:,1].T
