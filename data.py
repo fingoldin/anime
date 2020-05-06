@@ -17,7 +17,6 @@ users_array = users.to_numpy()
 print('Concatenating Dataframes')
 
 total_watchers = np.ceil(np.sum(users_array, axis=0) / 10.0)
-total_watchers = np.power(total_watchers,0.8)
 total_watchers = np.maximum(np.ones(len(total_watchers)), total_watchers)
 
 print('Finished Calculating Watch Statistics')
@@ -89,9 +88,9 @@ test_users = [ [
 
 print('Beginning Calculations')
 
-def kernel(user1, user2):
+def kernel(user1, user2, penalty=2.0):
   product = np.ceil(user1/10.0) * np.ceil(user2/10.0)
-  dif = 2 * (user1 - user2) * product
+  dif = penalty * (user1 - user2) * product
   n = np.sum(product)
   return math.exp(-math.sqrt(np.sum(dif * dif))/n) if n != 0 else 0
 
@@ -102,12 +101,14 @@ def convert_test(test_user):
 
   return test_vector
 
-def predict(test_user):
+def predict(test_user,scale=0.8,threshold=3.0,variety=0.85,penalty=2.0):
   anime = np.zeros(len(test_user))
+  watchers = np.power(total_watchers,variety)
   for user in users_array:
-      s = kernel(test_user, user)
-      anime = anime + s * user
-  anime = anime / total_watchers
+      s = kernel(test_user, user, penalty)
+      temp = np.power(user,scale)
+      anime = anime + s * (temp - np.ceil(user/10.0) * math.pow(threshold,scale))
+  anime = anime / watchers
 
   anime = (1 - np.ceil(test_user / 10.0)) * anime
   best_anime_idx = np.argpartition(anime, -10)[-10:]
